@@ -4,6 +4,22 @@
 
 
 #|==================================================
+Syntax info
+==================================================|#
+#|
+#' can be followed by a function name to indicate to the compiler the function can be byte compiled.
+(#'function-name) is equivalent to ('function-name)
+|#
+(defun my-add (a b)
+  (+ a b))
+(eq 'my-add #'my-add) ; => T
+
+(lambda (x) (* x x))
+(function (lambda (x) (* x x)))
+#'(lambda (x) (* x x))
+
+
+#|==================================================
 Functions
 ==================================================|#
 
@@ -38,7 +54,7 @@ Functions
    (list one two three))
 => (2 4 6)
 |#
-
+(many-happy-returns 2)
 
 #|==================================================
 Variables
@@ -76,6 +92,22 @@ Variables
   (print-variable))
 ;; => "I am dynamic"
 (print-variable) ;; => "Hey, I'm a global!"
+
+
+(defvar *x*) ; Unbound variable
+(defparameter *x* 15) ; 15 assigned to X
+(defvar *x* 10) ; Does nothing as X is already bound
+
+;; Global constant - cannot be used as function parameters or rebound to another value
+(defconstant +my-constant+ 20)
+
+
+;; SETF is general purpose assignment macro. (setf place value)
+(setf x 10)    ; x set to 10
+(setf x 1 y 2) ; x set to 1, y set to 2
+(incf x)       ; Same as (setf x (+ x 1))
+(decf x)       ; Same as (setf x (- x 1))
+(incf x 10)    ; Same as (setf x (+ x 10))
 
 
 
@@ -265,3 +297,154 @@ CANOE names the standard-class #<STANDARD-CLASS
       Documentation:
        The number of rowers.
 |#
+
+
+#|==========================================
+READ
+==========================================|#
+
+; (defparameter my-variable nil)
+
+(setf my-variable (read-line))
+(setf my-variable (read))
+(setf my-variable (read-from-string))
+
+
+#|==========================================
+PRINT
+Print string directives (all preceded by ~)
+~% - new line (TERPRI)
+~A - insert string version of Lisp object (PRINC)
+~S - print for READ function (PRIN1)
+==========================================|#
+
+; (format destination control-string optional-arguments*)
+
+(format t "Dear ~A, ~% How are  you?" "Bob")
+#|
+Dear Bob,
+ How are you?
+|#
+
+(format t "Dear ~S, How are you?" "Bob")
+#|
+Dear "Bob", How are you?
+|#
+
+(format nil "~A ~A" "Number is:" (+ 1 2))
+#|
+"Number us: 3" (a string)
+|#
+
+
+
+#|==========================================================
+String functions
+CONCATENATE - obvs
+LENGTH      - obvs
+SUBSEQ      - extract a substring
+SEARCH      - search within a string, returning the index
+==========================================================|#
+
+(concatenate 'string "Hello, " "world" ". Today is a good day.")
+;; => "Hello, world. Today is a good day."
+
+(length "Comman") ; => 6
+(search "term" "a term is a period of time") ; => 2
+(subseq "Common Lisp" 7 11) ; => "Lisp"
+
+
+
+#|==========================================================
+Blocks
+==========================================================|#
+
+;; PROGN evaluates a sequence of forms in order and returns the value of the last form as the PROGN value
+(progn
+  (print "Hello")
+  (print "World")
+  (+ 5 5))
+;; => 10
+
+;; BLOCK is similar to PROGN but is a named block, and has a mechanism for out-of-order exit with RETURN-FORM.
+(block my-block
+  (print "We see this")
+  (return-from my-block 10)
+  (print "This will never be reached :("))
+;; => 10
+
+
+
+#|============================================================
+Boolean & Logic
+============================================================|#
+
+(if 55 (print "True") (print "False")) ; => True"
+
+(and t (+ 1 2) (* 1 5)) ; => 5
+(or nil (+ 1 2) (* 1 5)) ; => 3
+
+(eq 5 5) ; => T
+(eq "5" "5") ; => NIL
+(equal)
+
+(string-equal "str" "str") ; => T
+(string-equal "str" "STR") ; => T
+
+
+(if (equal 5 (+ 1 4))
+    (print "This is true")
+    (print "This is false")) ; => "This is true"
+
+
+(​when​ (equal 5 (+ 1 4))
+      (print "Print if statement is true")
+      (print "Print this also"))
+#|
+=> "Print if statement is true"
+=> "Print this also"
+|#
+
+(unless (equal 3 (+ 1 4))
+  (print "Only print if condition is false")
+  (print "Print this also"))
+#|
+=> "Only print if condition is false"
+=> "Print this also"
+|#
+
+(cond ((equal 5 3) (print "This will not print"))
+      ((equal 5 5) (print "This will print"))
+      ((equal 5 5)
+       (print "This will not print as the")
+       (print "form exited at first true"))) ; => "This will print"
+
+(case (read)
+  ((1 3 5 7 (* 3 3)) "Odd")
+  (0
+   (print "Zero")
+   (print "Number"))
+  (otherwise "Not an odd number < 10"))
+
+#|
+=> 9 RET
+=> "Not an odd number < 10"
+=> 0 RET
+
+=> "Zero"
+=> "Number"
+|#
+
+
+
+#|==================================================
+Local functions
+==================================================|#
+
+(labels ((first-function (x) (+ x x))
+	   (second-function (y) (* y y))
+	   (third-function (z) (first-function z)))
+    (+ (first-function 1)
+       (second-function 2)
+       (third-function 3)))
+; => 12
